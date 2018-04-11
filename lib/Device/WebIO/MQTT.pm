@@ -32,6 +32,77 @@ use AnyEvent;
 use Device::WebIO;
 
 
+has 'mqtt' => (
+    is => 'ro',
+);
+has 'webio' => (
+    is => 'ro',
+);
+has 'topic_prefix' => (
+    is => 'ro',
+    default => sub {''},
+);
+has 'event_checks' => (
+    is => 'ro',
+    default => sub {{}},
+);
+has '_condvars' => (
+    is => 'ro',
+    default => sub {{}},
+);
+has '_condvar_cleanout_timer' => (
+    is => 'rw',
+);
+
+
+sub BUILD
+{
+    my ($self) = @_;
+    my $event_checks = $self->event_checks;
+
+    foreach my $dev_name (keys %$event_checks) {
+        foreach my $pin_num (@{ $event_checks->{$dev_name} }) {
+            my $topic = $self->_topic_name( $dev_name, $pin_num );
+            $self->_set_input_callback( $topic, $dev_name, $pin_num );
+        }
+    }
+
+    return $self;
+}
+
+sub _set_input_callback
+{
+    my ($self, $topic, $dev_name, $pin_num) = @_;
+    my $mqtt = $self->mqtt;
+    my $webio = $self->webio;
+
+    my $cv = AnyEvent->condvar;
+    $cv->cb( sub {
+        my ($cv) = @_;
+        my ($pin, $setting) = $cv->recv;
+        my $mqtt_cv = $mqtt->publish(
+            message => $setting,
+            topic => $topic,
+        );
+    });
+    $webio->set_anyevent_condvar( $dev_name, $pin_num, $cv );
+
+    return $cv;
+}
+
+sub _topic_name
+{
+    my ($self, $dev_name, $pin_num) = @_;
+    my $topic_prefix = $self->topic_prefix;
+    my $topic = join '/',
+        $topic_prefix,
+        $dev_name,
+        'gpio',
+        $pin_num;
+    return $topic;
+}
+
+
 1;
 __END__
 

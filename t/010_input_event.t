@@ -51,7 +51,7 @@ my $dev_mqtt = Device::WebIO::MQTT->new({
     mqtt => $webio_mqtt,
     webio => $webio,
     topic_prefix => $prefix,
-    event_checks => {
+    input_checks => {
         mock => [ 3 ],
     },
 });

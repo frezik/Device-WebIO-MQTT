@@ -1,5 +1,3 @@
-* Change 'event_checks' to 'input_checks'
-
 Version 2
 =========
 * Logical event processing with mini language

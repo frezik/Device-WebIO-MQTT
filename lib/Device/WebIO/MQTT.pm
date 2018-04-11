@@ -42,7 +42,7 @@ has 'topic_prefix' => (
     is => 'ro',
     default => sub {''},
 );
-has 'event_checks' => (
+has 'input_checks' => (
     is => 'ro',
     default => sub {{}},
 );
@@ -62,11 +62,11 @@ has '_condvar_cleanout_timer' => (
 sub BUILD
 {
     my ($self) = @_;
-    my $event_checks = $self->event_checks;
+    my $input_checks = $self->input_checks;
     my $output_checks = $self->output_checks;
 
-    foreach my $dev_name (keys %$event_checks) {
-        foreach my $pin_num (@{ $event_checks->{$dev_name} }) {
+    foreach my $dev_name (keys %$input_checks) {
+        foreach my $pin_num (@{ $input_checks->{$dev_name} }) {
             my $topic = $self->_topic_name( $dev_name, $pin_num );
             $self->_set_input_callback( $topic, $dev_name, $pin_num );
         }

@@ -46,6 +46,10 @@ has 'event_checks' => (
     is => 'ro',
     default => sub {{}},
 );
+has 'output_checks' => (
+    is => 'ro',
+    default => sub {{}},
+);
 has '_condvars' => (
     is => 'ro',
     default => sub {{}},
@@ -59,11 +63,19 @@ sub BUILD
 {
     my ($self) = @_;
     my $event_checks = $self->event_checks;
+    my $output_checks = $self->output_checks;
 
     foreach my $dev_name (keys %$event_checks) {
         foreach my $pin_num (@{ $event_checks->{$dev_name} }) {
             my $topic = $self->_topic_name( $dev_name, $pin_num );
             $self->_set_input_callback( $topic, $dev_name, $pin_num );
+        }
+    }
+
+    foreach my $dev_name (keys %$output_checks) {
+        foreach my $pin_num (@{ $output_checks->{$dev_name} }) {
+            my $topic = $self->_topic_name( $dev_name, $pin_num );
+            $self->_set_output_callback( $topic, $dev_name, $pin_num );
         }
     }
 
@@ -88,6 +100,25 @@ sub _set_input_callback
     $webio->set_anyevent_condvar( $dev_name, $pin_num, $cv );
 
     return $cv;
+}
+
+sub _set_output_callback
+{
+    my ($self, $topic, $dev_name, $pin_num) = @_;
+    my $webio = $self->webio;
+    my $mqtt = $self->mqtt;
+
+    $webio->set_as_output( $dev_name, $pin_num );
+
+    my $cv = $mqtt->subscribe(
+        topic => $topic,
+        callback => sub {
+            my ($topic, $msg) = @_;
+            $webio->digital_output( $dev_name, $pin_num, $msg );
+            return;
+        },
+    );
+    return;
 }
 
 sub _topic_name

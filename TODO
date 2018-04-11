@@ -1,0 +1,13 @@
+* Change 'event_checks' to 'input_checks'
+
+Version 2
+=========
+* Logical event processing with mini language
+  * Example:
+      on_topic( 'foo/bar/baz',
+          timer( 0.1, output(3, msg()) ),
+          timer( 0.1, output(3, ! msg()) ),
+      )
+    Which says: on getting foo, set the output to the message value for 0.1 
+    seconds, and then set it to boolean not of the message value for 0.1 
+    seconds, then return it to its original state.

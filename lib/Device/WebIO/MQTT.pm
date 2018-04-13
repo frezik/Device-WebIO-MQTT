@@ -54,9 +54,6 @@ has '_condvars' => (
     is => 'ro',
     default => sub {{}},
 );
-has '_condvar_cleanout_timer' => (
-    is => 'rw',
-);
 
 
 sub BUILD
@@ -88,6 +85,8 @@ sub _set_input_callback
     my $mqtt = $self->mqtt;
     my $webio = $self->webio;
 
+    $webio->set_as_input( $dev_name, $pin_num );
+
     my $cv = AnyEvent->condvar;
     $cv->cb( sub {
         my ($cv) = @_;
@@ -110,14 +109,18 @@ sub _set_output_callback
 
     $webio->set_as_output( $dev_name, $pin_num );
 
-    my $cv = $mqtt->subscribe(
+    # By saving the condvar in $self->_condvars, we make sure it sticks around 
+    # until we need it
+    my $cv; $cv = $mqtt->subscribe(
         topic => $topic,
         callback => sub {
             my ($topic, $msg) = @_;
             $webio->digital_output( $dev_name, $pin_num, $msg );
+            delete $self->_condvars->{$cv};
             return;
         },
     );
+    $self->_condvars->{$cv} = $cv;
     return;
 }
 

@@ -25,6 +25,7 @@
 use v5.12;
 use warnings;
 use AnyEvent;
+use AnyEvent::MQTT;
 use Device::WebIO;
 use Device::WebIO::MQTT;
 use Device::WebIO::RaspberryPi;
@@ -42,7 +43,13 @@ my $mqtt = AnyEvent::MQTT->new(
 my $mqtt_dev = Device::WebIO::MQTT->new({
     mqtt => $mqtt,
     webio => $webio,
-    topic_prefix => 'home/garage',
+    topic_prefix => 'home',
+    input_checks => {
+        rpi => [ 3 ],
+    },
+    output_checks => {
+        rpi => [ 4 ],
+    },
 });
 
 say "Running";

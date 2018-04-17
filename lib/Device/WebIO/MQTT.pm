@@ -76,6 +76,8 @@ sub BUILD
         }
     }
 
+    # TODO timer to clean out $self->_condvars
+
     return $self;
 }
 
@@ -95,6 +97,12 @@ sub _set_input_callback
             message => $setting,
             topic => $topic,
         );
+        my $sub = $mqtt_cv->cb;
+        $mqtt_cv->cb( sub {
+            delete $self->_condvars->{$mqtt_cv};
+            $sub->( @_ );
+        });
+        $self->_condvars->{$mqtt_cv} = $mqtt_cv;
     });
     $webio->set_anyevent_condvar( $dev_name, $pin_num, $cv );
 
